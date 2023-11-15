@@ -147,7 +147,7 @@ def pawnMoves(col, row, grid):
                 vectors.append([-1,0])
             if grid[col-1][row-1].piece:
                 vectors.append([-1,-1])
-            if grid[col+1][row-1].piece:
+            if grid[col-1][row+1].piece:
                 vectors.append([-1,1])
     
     return vectors
