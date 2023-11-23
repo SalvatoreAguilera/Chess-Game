@@ -265,7 +265,7 @@ def isSquareUnderAttack(pos, grid, currMove):
     for i in range(ROWS):
         for j in range(ROWS):
             if grid[i][j].piece and grid[i][j].piece.team != currMove:
-                if pos in generatePotentialMoves((i, j), grid, None):
+                if pos in generatePotentialMovesWithoutCastling((i, j), grid):
                     return True
     return False
 
