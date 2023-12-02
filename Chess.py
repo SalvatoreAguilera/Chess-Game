@@ -3,6 +3,7 @@ import random
 import sys
 from itertools import combinations
 import os
+#changed
 
 # current directory
 dirname = os.path.dirname(__file__)
@@ -27,6 +28,7 @@ WKNIGHT= pygame.image.load(os.path.join(dirname, 'Pieces/wN.png'))
 WPAWN= pygame.image.load(os.path.join(dirname, 'Pieces/wP.png'))
 WQUEEN= pygame.image.load(os.path.join(dirname, 'Pieces/wQ.png'))
 WROOK= pygame.image.load(os.path.join(dirname, 'Pieces/wR.png'))
+
 
 pygame.init()
 WIN = pygame.display.set_mode((WIDTH,WIDTH))
