@@ -1,13 +1,11 @@
 #Class Project pygame chess
 #members: Jonathan Morley, , ,
-#Version 1.1 "en passant update"
-#11/21/23 not done at 2:17 A.M.
+#Version 1.3 "broken en passant and pawn promotion"
+#11/27/23 not done at 2:17 A.M.
 #
 
 import pygame
-#import random
 import sys
-#from itertools import combinations
 import os
 
 # current directory
@@ -19,7 +17,6 @@ WHITE = (255,255,255)
 BLACK = (199,199,199)
 WIDTH = 800
 ROWS = 8
-
 
 #pieces are global variables, able to be called by all subsequent classes, functions, and methods.
 #IMPORTANT TO NOT NAME LOCAL VARIABLES AS GLOBAL OR TRY TO GIVE T
@@ -71,7 +68,7 @@ class Piece:
         #assigns team
         self.team=team
         #default color is white, if statement sets opposite team to black
-        self.image = images if self.team == 'B' else images
+        self.image = images# if self.team == 'B' else images
         #assigns attribute of the piece type, pawn, rook, king, etc
         self.type = piece_type
         self.hasMoved = False  # if pieces havent moved, special rules may apply
@@ -85,6 +82,79 @@ class LastMove:
         self.start_pos = start_pos # The starting position of the move (tuple: (col, row))
         self.end_pos = end_pos     # The ending position of the move (tuple: (col, row))
         self.move_type = move_type # Type of move (e.g., "en_passant", "castle", "two_step_pawn", etc.)
+
+############ START PAWN PROMOTION ############
+
+def promotePawn(grid, pawnPos, team):
+    # Display promotion options
+    print("Promote Pawn function called")
+    promotion_options = displayPromotionOptions(team)
+    # Wait for player input and get the selected piece
+    selectedPieceType = getPlayerChoice(promotion_options)
+    # Replace the pawn with the new piece
+    print(f"Selected piece for promotion: {selectedPieceType}")
+    new_piece = None
+    if selectedPieceType == 'queen':
+        new_piece = Piece(team, 'QUEEN', WQUEEN if team == 'W' else BQUEEN)
+    elif selectedPieceType == 'rook':
+        new_piece = Piece(team, 'ROOK', WROOK if team == 'W' else BROOK)
+    elif selectedPieceType == 'knight':
+        new_piece = Piece(team, 'KNIGHT', WKNIGHT if team == 'W' else BKNIGHT)
+    elif selectedPieceType == 'bishop':
+        new_piece = Piece(team, 'BISHOP', WBISHOP if team == 'W' else BBISHOP)
+    if new_piece:
+        grid[pawnPos[0]][pawnPos[1]].piece = new_piece
+        print(f"Promotion: {new_piece.type} created for team {new_piece.team}")
+        update_display(WIN, grid, ROWS, WIDTH)
+    else:
+        print("Error: promotion not created")
+
+def displayPromotionOptions(team):
+    # Set the size of each promotion option icon
+    icon_size = WIDTH // ROWS // 2
+    # Set the starting position for the icons, this can be adjusted based on your UI layout
+    start_x = WIDTH // 2 - 2 * icon_size
+    start_y = 10  # Some margin from the top
+
+    # Load the images for each promotion option
+    queen_img = pygame.transform.scale(WQUEEN if team == 'W' else BQUEEN, (icon_size, icon_size))
+    rook_img = pygame.transform.scale(WROOK if team == 'W' else BROOK, (icon_size, icon_size))
+    bishop_img = pygame.transform.scale(WBISHOP if team == 'W' else BBISHOP, (icon_size, icon_size))
+    knight_img = pygame.transform.scale(WKNIGHT if team == 'W' else BKNIGHT, (icon_size, icon_size))
+
+    # Define rectangles for each option for click detection
+    queen_rect = pygame.Rect(start_x, start_y, icon_size, icon_size)
+    rook_rect = pygame.Rect(start_x + icon_size, start_y, icon_size, icon_size)
+    bishop_rect = pygame.Rect(start_x + 2 * icon_size, start_y, icon_size, icon_size)
+    knight_rect = pygame.Rect(start_x + 3 * icon_size, start_y, icon_size, icon_size)
+
+    # Draw the options on the screen
+    WIN.blit(queen_img, queen_rect)
+    WIN.blit(rook_img, rook_rect)
+    WIN.blit(bishop_img, bishop_rect)
+    WIN.blit(knight_img, knight_rect)
+    pygame.display.update()
+
+    # Return the rectangles for click detection
+    return {"queen": queen_rect, "rook": rook_rect, "bishop": bishop_rect, "knight": knight_rect}
+
+def getPlayerChoice(promotion_options):
+    # Loop until a valid choice is made
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                # Get the mouse click position
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+
+                # Check if the click is within any of the promotion option rectangles
+                for piece, rect in promotion_options.items():
+                    if rect.collidepoint(mouse_x, mouse_y):
+                        return piece  # Return the name of the chosen piece
+############ END PAWN PROMOTION ############
+
 def make_grid(rows, width):
     #initialize grid array
     grid = []
@@ -105,37 +175,37 @@ def make_grid(rows, width):
             if abs(i-j) % 2 == 0:
                 node.colour=BLACK
             # Initialize pawns on the 2nd and 7th rows.
-            if i == 1:
-                node.piece = Piece('W','PAWN',WPAWN)
             if i == 6:
+                node.piece = Piece('W','PAWN',WPAWN)
+            if i == 1:
                 node.piece = Piece('B','PAWN',BPAWN)
 
             #  Place rooks in the corners of the board.
-            if i == 0 and j == 0 or j == 7 and i == 0:
-                node.piece = Piece('W','ROOK', WROOK)
             if i == 7 and j == 0 or i == 7 and j == 7:
+                node.piece = Piece('W','ROOK', WROOK)
+            if i == 0 and j == 0 or j == 7 and i == 0:
                 node.piece = Piece('B','ROOK', BROOK)
 
             # Initialize knights next to the rooks.
-            if i == 0 and j == 1 or j == 6 and i == 0:
-                node.piece = Piece('W','KNIGHT', WKNIGHT)
             if i == 7 and j == 1 or i == 7 and j == 6:
+                node.piece = Piece('W','KNIGHT', WKNIGHT)
+            if i == 0 and j == 1 or j == 6 and i == 0:
                 node.piece = Piece('B','KNIGHT', BKNIGHT)
 
             # Place bishops next to the knights.
-            if i == 0 and j == 2 or j == 5 and i == 0:
-                node.piece = Piece('W','BISHOP', WBISHOP)
             if i == 7 and j == 2 or i == 7 and j == 5:
+                node.piece = Piece('W','BISHOP', WBISHOP)
+            if i == 0 and j == 2 or j == 5 and i == 0:
                 node.piece = Piece('B','BISHOP', BBISHOP)
 
             #  Set the king and queen in the middle of the first and last rows.
-            if i == 0 and j == 4:
-                node.piece = Piece('W','KING', WKING)
             if i == 7 and j == 4:
+                node.piece = Piece('W','KING', WKING)
+            if i == 0 and j == 4:
                 node.piece = Piece('B','KING', BKING)
-            if i == 0 and j == 3:
-                node.piece = Piece('W','QUEEN', WQUEEN)
             if i == 7 and j == 3:
+                node.piece = Piece('W','QUEEN', WQUEEN)
+            if i == 0 and j == 3:
                 node.piece = Piece('B','QUEEN', BQUEEN)
 
             # Add the node to the current row in the grid.
@@ -161,9 +231,13 @@ def pawnMoves(col, row, grid, lastMove):
     team = grid[col][row].piece.team
 
     # Forward movement for pawns
-    direction = -1 if team == 'B' else 1
-    start_row = 6 if team == 'B' else 1
-    enemy_start_row = 3 if team == 'B' else 4
+    direction = -1 if team == 'W' else 1
+    start_row = 6 if team == 'W' else 1
+    enemy_start_row = 3 if team == 'W' else 4
+
+    # Ensure pawn does not move forward if at the end of the board
+    if (team == 'B' and col == 7) or (team == 'W' and col == 0):
+        return vectors  # No forward moves possible
 
     # Standard pawn moves
     if not grid[col + direction][row].piece:
@@ -171,20 +245,19 @@ def pawnMoves(col, row, grid, lastMove):
         if col == start_row and not grid[col + 2 * direction][row].piece:
             vectors.append([2 * direction, 0])
 
-    # Pawn captures
+    # Pawn captures, including en passant
     for dx in [-1, 1]:
-        if row + dx < 0 or row + dx >= ROWS:
-            continue
-        if grid[col + direction][row + dx].piece and grid[col + direction][row + dx].piece.team != team:
-            vectors.append([direction, dx])
+        if 0 <= row + dx < ROWS:
+            # Regular capture
+            if grid[col + direction][row + dx].piece and grid[col + direction][row + dx].piece.team != team:
+                vectors.append([direction, dx])
+            # En passant
+            if col == enemy_start_row:  # Pawn must be on the fifth rank to perform en passant
+                if lastMove and lastMove.piece.type == 'PAWN' and abs(lastMove.start_pos[0] - lastMove.end_pos[0]) == 2:
+                    if lastMove.end_pos[1] == row + dx:  # The last move's pawn must be adjacent to the current pawn
+                        en_passant_capture = [direction, dx]
+                        vectors.append(en_passant_capture)
 
-    # En passant
-    if lastMove and lastMove.piece.type == 'PAWN' and abs(lastMove.start_pos[0] - lastMove.end_pos[0]) == 2:
-        if lastMove.end_pos[0] == col and abs(lastMove.end_pos[1] - row) == 1:
-            if lastMove.end_pos[1] == row + 1 or lastMove.end_pos[1] == row - 1:
-                if lastMove.piece.team != team and lastMove.end_pos[0] == enemy_start_row:
-                    en_passant_capture = [direction, lastMove.end_pos[1] - row]
-                    vectors.append(en_passant_capture)
     return vectors
 
 def rookMoves(col, row, grid):
@@ -265,7 +338,7 @@ def isSquareUnderAttack(pos, grid, currMove):
     for i in range(ROWS):
         for j in range(ROWS):
             if grid[i][j].piece and grid[i][j].piece.team != currMove:
-                if pos in generatePotentialMoves((i, j), grid, None):
+                if pos in generatePotentialMovesWithoutCastling((i, j), grid):
                     return True
     return False
 
@@ -276,7 +349,6 @@ def print_grid_positions(grid):
                 print(f"{node.piece.type} at ({node.row}, {node.col}) - Team: {node.piece.team}")
 
 def move(grid, piecePosition, newPosition, lastMove):
-    #resetColours(grid, piecePosition)
     # Extract the column and row from the newPosition
     newColumn, newRow = newPosition
     # Extract the column and row from the piecePosition
@@ -308,23 +380,31 @@ def move(grid, piecePosition, newPosition, lastMove):
         print("Move failed: Move puts own king in check")
         return False  # Return a value that indicates the move was not successful
 
-    # Check for en passant
-    if piece.type == 'PAWN' and newColumn != oldColumn and not grid[newColumn][newRow].piece:
-        print("En passant attempt detected")
-        # This is a diagonal move without a normal capture, potential en passant
-        if lastMove and lastMove.piece.type == 'PAWN' and abs(lastMove.start_pos[0] - lastMove.end_pos[0]) == 2:
-            if lastMove.end_pos[1] == newRow and abs(lastMove.end_pos[1] - oldRow) == 1:
-                # Remove the pawn that was "passed over" during en passant
-                passedPawnRow = lastMove.start_pos[0] if piece.team == 'W' else lastMove.end_pos[0]
-                grid[passedPawnRow][newRow].piece = None
-
     # Regular Move
     grid[newColumn][newRow].piece = piece
     grid[oldColumn][oldRow].piece = None
     piece.hasMoved = True
 
+    # Promotion check for pawns reaching the opposite end of the board
+    if piece.type == 'PAWN':
+        if (piece.team == 'W' and newColumn == 0) or (piece.team == 'B' and newColumn == 7):
+            print("Pawn promotion triggered")
+            promotePawn(grid, newPosition, piece.team)  # Call the promotion function
+
+    # Check for en passant
+    if piece.type == 'PAWN' and newColumn != oldColumn and not grid[newColumn][newRow].piece:
+        #print("En passant attempt detected")
+        # This is a diagonal move without a normal capture, potential en passant
+        if lastMove and lastMove.piece.type == 'PAWN' and abs(lastMove.start_pos[0] - lastMove.end_pos[0]) == 2:
+            if lastMove.end_pos[1] == newRow and abs(lastMove.end_pos[1] - oldRow) == 1:
+                # Remove the pawn that was "passed over" during en passant
+                passedPawnRow = lastMove.start_pos[0] if piece.team == 'B' else lastMove.end_pos[0]
+                grid[passedPawnRow][newRow].piece = None
+
+
+
     print(f"Move completed from {piecePosition} to {newPosition}")
-    return opposite(piece.team)
+    return True
 
 def generatePotentialMoves(nodePosition, grid, lastMove):
     checker = lambda x, y: x + y >=0 and x + y < 8
@@ -408,8 +488,6 @@ def generatePotentialMovesWithoutCastling(nodePosition, grid):
 
     return positions
 
-
-
 def HighlightpotentialMoves(piecePosition, grid,lastMove):
     #takes position of a chess piece (piecePosition) and the board grid
     #call generatePotentialMoves to get a list of all valid move positions of the piece
@@ -466,9 +544,9 @@ def resetColours(grid, lastHighlight, lastMove):
         for j in range(ROWS):
             # Set the color based on the position to get the checkerboard pattern
             if (i + j) % 2 == 0:
-                grid[i][j].colour = WHITE
-            else:
                 grid[i][j].colour = BLACK
+            else:
+                grid[i][j].colour = WHITE
 
     #for debugging but can be implmented in real game if we wnat
     # If there is a last move, you might want to highlight the last move made
@@ -478,8 +556,6 @@ def resetColours(grid, lastHighlight, lastMove):
         endRow, endCol = lastMove.end_pos
         grid[startRow][startCol].colour = ORANGE  # Use a different color if needed
         grid[endRow][endCol].colour = ORANGE  # Use a different color if needed
-
-
 
 def canMoveOutOfCheck(currMove, grid):
     # Iterate through all pieces of the current player
@@ -555,28 +631,7 @@ def isKingInCheck(currMove, grid):
                     return True  # King is in check
 
     return False
-'''
-#working check
-    kingPos = None
-    for i in range(ROWS):
-        for j in range(ROWS):
-            node = grid[i][j]
-            if node.piece and node.piece.type == 'KING' and node.piece.team == currMove:
-                kingPos = (i, j)
-                break
-        if kingPos:
-            break
 
-    if kingPos is None:
-        return False  # King not found, which is an error condition
-
-    # Check if any of the opponent's pieces can attack the king
-    for i in range(ROWS):
-        for j in range(ROWS):
-            if grid[i][j].piece and grid[i][j].piece.team != currMove:
-                if kingPos in generatePotentialMoves((i, j), grid, None):
-                    return True  # King is in check
-'''
 def isKingInCheckmate(currMove, grid):
     # First, confirm the king is currently in check
     if not isKingInCheck(currMove, grid):
@@ -617,11 +672,13 @@ def main(WIDTH,ROWS):
     grid = make_grid(ROWS, WIDTH)
     # Track the currently highlighted piece, initially set to None
     highlightedPiece = None
-    # Set the current move to 'B' (Black) as the starting player
-    currMove = 'B'
+    # Set the current move to 'W' (White) as the starting player
+    currMove = 'W'
     lastMove = None  # Initialize lastMove as None
+
+    checkMate = isKingInCheckmate(currMove, grid)
     # Start the game loop
-    while True:
+    while checkMate is not True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 print('EXIT SUCCESSFUL')
@@ -654,6 +711,7 @@ def main(WIDTH,ROWS):
                                 if not canMoveOutOfCheck(opposite(currMove), grid):
                                     if isKingInCheckmate(opposite(currMove), grid):
                                         print("Checkmate!")
+                                        exit()
                                     else:
                                         print("Stalemate!")
                                 # Switch turns
@@ -662,9 +720,6 @@ def main(WIDTH,ROWS):
                             # Move was not successful (would put/leave king in check), handle accordingly
                             print("Illegal move: would put/leave king in check.")
                             # Do not switch turns, allow the player to make another move
-
-                            # Switch turns
-                            #currMove = 'W' if currMove == 'B' else 'B'
                 elif highlightedPiece == clickedNode:
                         pass
                 else:
