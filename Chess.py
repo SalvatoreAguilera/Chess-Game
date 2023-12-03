@@ -257,6 +257,9 @@ def pawnMoves(col, row, grid, lastMove):
                     if lastMove.end_pos[1] == row + dx:  # The last move's pawn must be adjacent to the current pawn
                         en_passant_capture = [direction, dx]
                         vectors.append(en_passant_capture)
+                        
+                        
+                        
 
     return vectors
 
@@ -380,11 +383,7 @@ def move(grid, piecePosition, newPosition, lastMove):
         print("Move failed: Move puts own king in check")
         return False  # Return a value that indicates the move was not successful
 
-    # Regular Move
-    grid[newColumn][newRow].piece = piece
-    grid[oldColumn][oldRow].piece = None
-    piece.hasMoved = True
-
+    
     # Promotion check for pawns reaching the opposite end of the board
     if piece.type == 'PAWN':
         if (piece.team == 'W' and newColumn == 0) or (piece.team == 'B' and newColumn == 7):
@@ -393,14 +392,20 @@ def move(grid, piecePosition, newPosition, lastMove):
 
     # Check for en passant
     if piece.type == 'PAWN' and newColumn != oldColumn and not grid[newColumn][newRow].piece:
-        #print("En passant attempt detected")
         # This is a diagonal move without a normal capture, potential en passant
+        
         if lastMove and lastMove.piece.type == 'PAWN' and abs(lastMove.start_pos[0] - lastMove.end_pos[0]) == 2:
             if lastMove.end_pos[1] == newRow and abs(lastMove.end_pos[1] - oldRow) == 1:
                 # Remove the pawn that was "passed over" during en passant
-                passedPawnRow = lastMove.start_pos[0] if piece.team == 'B' else lastMove.end_pos[0]
+                passedPawnRow = lastMove.end_pos[0]#lastMove.start_pos[0] if piece.team == 'B' else lastMove.end_pos[0]
                 grid[passedPawnRow][newRow].piece = None
+                
+                
 
+    # Regular Move
+    grid[newColumn][newRow].piece = piece
+    grid[oldColumn][oldRow].piece = None
+    piece.hasMoved = True
 
 
     print(f"Move completed from {piecePosition} to {newPosition}")
