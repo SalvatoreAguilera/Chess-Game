@@ -396,13 +396,6 @@ def move(grid, piecePosition, newPosition, lastMove):
         print("Move failed: Move puts own king in check")
         return False  # Return a value that indicates the move was not successful
 
-    
-    # Promotion check for pawns reaching the opposite end of the board
-    if piece.type == 'PAWN':
-        if (piece.team == 'W' and newColumn == 0) or (piece.team == 'B' and newColumn == 7):
-            print("Pawn promotion triggered")
-            promotePawn(grid, newPosition, piece.team)  # Call the promotion function
-
     # Check for en passant
     if piece.type == 'PAWN' and newColumn != oldColumn and not grid[newColumn][newRow].piece:
         # This is a diagonal move without a normal capture, potential en passant
@@ -412,14 +405,17 @@ def move(grid, piecePosition, newPosition, lastMove):
                 # Remove the pawn that was "passed over" during en passant
                 passedPawnRow = lastMove.end_pos[0]#lastMove.start_pos[0] if piece.team == 'B' else lastMove.end_pos[0]
                 grid[passedPawnRow][newRow].piece = None
-                
-                
 
     # Regular Move
     grid[newColumn][newRow].piece = piece
     grid[oldColumn][oldRow].piece = None
     piece.hasMoved = True
 
+    # Promotion check for pawns reaching the opposite end of the board
+    if piece.type == 'PAWN':
+        if (piece.team == 'W' and newColumn == 0) or (piece.team == 'B' and newColumn == 7):
+            print("Pawn promotion triggered")
+            promotePawn(grid, newPosition, piece.team)  # Call the promotion function
 
     print(f"Move completed from {piecePosition} to {newPosition}")
     return True
