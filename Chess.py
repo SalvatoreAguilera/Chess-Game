@@ -1,5 +1,5 @@
 #Class Project pygame chess
-#members: Jonathan Morley,Irene Chavez , ,
+#members: Jonathan Morley, , ,
 #Version 1.3 "broken en passant and pawn promotion"
 #11/27/23 not done at 2:17 A.M.
 #
@@ -308,6 +308,8 @@ def canCastle(kingPos, rookPos, grid, currMove):
     return True
 
 def isSquareUnderAttack(pos, grid, currMove):
+    #straight forward, for every row and column check if that square matches possible moves
+    #in generatePotentialMovesWithoutCastling
     for i in range(ROWS):
         for j in range(ROWS):
             if grid[i][j].piece and grid[i][j].piece.team != currMove:
@@ -459,7 +461,7 @@ def generatePotentialMovesWithoutCastling(nodePosition, grid):
 
     return positions
 
-def HighlightpotentialMoves(piecePosition, grid,lastMove):
+def highlightPotentialMoves(piecePosition, grid,lastMove):
     #takes position of a chess piece (piecePosition) and the board grid
     #call generatePotentialMoves to get a list of all valid move positions of the piece
     #piecePosition is the current location of the piece, and grid is the current state of the chessboard
@@ -488,7 +490,7 @@ def highlight(ClickedNode, Grid, OldHighlight, lastMove):
         resetColours(Grid, OldHighlight, lastMove)
     # Highlight all potential moves for the piece at the clicked node.
     # This function changes the colour of all nodes where the piece can legally move.
-    HighlightpotentialMoves(ClickedNode, Grid, lastMove)
+    highlightPotentialMoves(ClickedNode, Grid, lastMove)
     # Return the position of the clicked node.
     # This can be used to track the currently highlighted node.
     return (Column,Row)
@@ -714,7 +716,7 @@ def getPlayerChoice(promotion_options):
 ############ END PAWN PROMOTION ############
 
 #checking for winner
-def Chesscheck_win(grid):
+def chessCheckWin(grid):
     white_count = 0
     black_count = 0
 
@@ -732,7 +734,7 @@ def Chesscheck_win(grid):
 
     return None  # No winner yet
 #win screen display
-def display_Chesswin_screen(winner):
+def displayChessWinScreen(winner):
     font = pygame.font.Font(None, 65)
 
     # Create a black box
@@ -762,7 +764,7 @@ def display_Chesswin_screen(winner):
     pygame.display.update()
     pygame.time.delay(3000)  # Display for 3 seconds
 
-def make_testgrid(rows, width):
+def makeTestGrid(rows, width):
     #initialize grid array
     grid = []
     #The double slash // in Python is used for floor division.
@@ -835,15 +837,15 @@ class checkersNode:
             WIN.blit(self.piece.image, (self.x, self.y))
 
 
-def update_checkersdisplay(win, grid, rows, width):
+def updateCheckersDisplay(win, grid, rows, width):
     for row in grid:
         for spot in row:
             spot.draw(win)
-    draw_checkersgrid(win, rows, width)
+    drawCheckersGrid(win, rows, width)
     pygame.display.update()
 
 
-def make_checkersgrid(rows, width):
+def makeCheckersGrid(rows, width):
     grid = []
     gap = width// rows
     count = 0
@@ -862,7 +864,7 @@ def make_checkersgrid(rows, width):
     return grid
 
 
-def draw_checkersgrid(win, rows, width):
+def drawCheckersGrid(win, rows, width):
     gap = width // ROWS
     for i in range(rows):
         pygame.draw.line(win, CHECKERSBLACK, (0, i * gap), (width, i * gap))
@@ -898,13 +900,13 @@ def resetCheckersColours(grid, node):
         nodeX, nodeY = colouredNodes
         grid[nodeX][nodeY].colour = CHECKERSBLACK if abs(nodeX - nodeY) % 2 == 0 else CHECKERSWHITE
 
-def HighlightpotentialCheckersMoves(piecePosition, grid):
+def highlightPotentialCheckersMoves(piecePosition, grid):
     positions = generatePotentialCheckersMoves(piecePosition, grid)
     for position in positions:
         Column,Row = position
         grid[Column][Row].colour=CHECKERSBLUE
 
-def checkersopposite(team):
+def checkersOpposite(team):
     return "R" if team=="G" else "G"
 
 def generatePotentialCheckersMoves(nodePosition, grid):
@@ -922,7 +924,7 @@ def generatePotentialCheckersMoves(nodePosition, grid):
                 if not grid[(column+columnVector)][(row+rowVector)].piece:
                     positions.append((column + columnVector, row + rowVector))
                 elif grid[column+columnVector][row+rowVector].piece and\
-                        grid[column+columnVector][row+rowVector].piece.team==checkersopposite(grid[column][row].piece.team):
+                        grid[column+columnVector][row+rowVector].piece.team==checkersOpposite(grid[column][row].piece.team):
 
                     if checker((2* columnVector), column) and checker((2* rowVector), row) \
                             and not grid[(2* columnVector)+ column][(2* rowVector) + row].piece:
@@ -930,33 +932,39 @@ def generatePotentialCheckersMoves(nodePosition, grid):
 
     return positions
 
-def checkershighlight(ClickedNode, Grid, OldHighlight):
+def checkersHighlight(ClickedNode, Grid, OldHighlight):
     Column,Row = ClickedNode
     Grid[Column][Row].colour=CHECKERSORANGE
     if OldHighlight:
         resetCheckersColours(Grid, OldHighlight)
-    HighlightpotentialCheckersMoves(ClickedNode, Grid)
+    highlightPotentialCheckersMoves(ClickedNode, Grid)
     return (Column,Row)
 
 def checkersmove(grid, piecePosition, newPosition):
     resetCheckersColours(grid, piecePosition)
+    # Move the piece to the new position
     newColumn, newRow = newPosition
     oldColumn, oldRow = piecePosition
-
+    # Move the piece to the new position
     piece = grid[oldColumn][oldRow].piece
     grid[newColumn][newRow].piece=piece
     grid[oldColumn][oldRow].piece = None
-
+    # Check for promotion to king
     if newColumn==7 and grid[newColumn][newRow].piece.team=='R':
+        # Promote red piece to king if it reaches the bottom row
         grid[newColumn][newRow].piece.type='KING'
         grid[newColumn][newRow].piece.image=REDKING
     if newColumn==0 and grid[newColumn][newRow].piece.team=='G':
+        # Promote green piece to king if it reaches the top row
         grid[newColumn][newRow].piece.type='KING'
         grid[newColumn][newRow].piece.image=GREENKING
     if abs(newColumn-oldColumn)==2 or abs(newRow-oldRow)==2:
+        # Remove the captured piece from the board
         grid[int((newColumn+oldColumn)/2)][int((newRow+oldRow)/2)].piece = None
-        return checkersopposite(grid[newColumn][newRow].piece.team)
-    return checkersopposite(grid[newColumn][newRow].piece.team)
+        # Switch turns after a capture
+        return checkersOpposite(grid[newColumn][newRow].piece.team)
+    # Switch turns after a regular move
+    return checkersOpposite(grid[newColumn][newRow].piece.team)
 
 def checkersCheck_win(grid):
     red_count = 0
@@ -976,7 +984,7 @@ def checkersCheck_win(grid):
 
     return None  # No winner yet
 
-def display_Checkerswin_screen(winner):
+def displayCheckersWinScreen(winner):
     font = pygame.font.Font(None, 65)
 
     # Create a black box
@@ -1006,7 +1014,7 @@ def display_Checkerswin_screen(winner):
     pygame.display.update()
     pygame.time.delay(3000)  # Display for 3 seconds
 
-def make_testcheckersgrid(rows, width):
+def makeTestCheckersGrid(rows, width):
     grid = []
     gap = width // rows
 
@@ -1044,7 +1052,7 @@ def make_testcheckersgrid(rows, width):
     return grid
 '''end of checkers funtions'''
 
-def draw_grid_labels(surface, top_left_x, top_left_y, cell_size):
+def drawGridLabels(surface, top_left_x, top_left_y, cell_size):
     font = pygame.font.SysFont(None, 24)
     text_color = (255, 255, 255)  # White color for the text
 
@@ -1157,7 +1165,7 @@ def chessGame():
                                             print("Checkmate!")
                                             update_display(WIN,grid,ROWS,WIDTH)
                                             winner = opposite(currMove)
-                                            display_Chesswin_screen(winner)
+                                            displayChessWinScreen(winner)
                                         else:
                                             print("Stalemate!")
                                 # Switch turns
@@ -1181,12 +1189,12 @@ def chessGame():
             # Clear the screen
             WIN.fill((0, 0, 0))  # Black background
             # Draw the grid labels
-            draw_grid_labels(WIN, board_top_left_x, board_top_left_y, cell_size)
+            drawGridLabels(WIN, board_top_left_x, board_top_left_y, cell_size)
             update_display(WIN,grid,ROWS,WIDTH)
             #pygame.display.flip()
-            winner = Chesscheck_win(grid)
+            winner = chessCheckWin(grid)
             if winner:
-                display_Chesswin_screen(winner)
+                displayChessWinScreen(winner)
                 loop = False
 
 def checkersGame():
@@ -1208,13 +1216,13 @@ def checkersGame():
     #pause option
     pause = False
     loop = True
-    grid = make_checkersgrid(ROWS, WIDTH)
+    grid = makeCheckersGrid(ROWS, WIDTH)
     currMove = 'G'
 
     def restartCheckersGame():
         nonlocal loop, grid, currMove, highlightedPiece
         loop = True
-        grid = make_checkersgrid(ROWS, WIDTH)
+        grid = makeCheckersGrid(ROWS, WIDTH)
         currMove = 'G'
         highlightedPiece = None
 
@@ -1264,7 +1272,7 @@ def checkersGame():
                     else:
                         if grid[ClickedPositionColumn][ClickedPositionRow].piece:
                             if currMove == grid[ClickedPositionColumn][ClickedPositionRow].piece.team:
-                                highlightedPiece = checkershighlight(clickedNode, grid, highlightedPiece)
+                                highlightedPiece = checkersHighlight(clickedNode, grid, highlightedPiece)
         if pause:
             current_screen = pygame.display.get_surface()
             draw_pause(current_screen)
@@ -1273,11 +1281,11 @@ def checkersGame():
             # Clear the screen
             WIN.fill((0, 0, 0))  # Black background
              # Draw the grid labels for Checkers - ensure the coordinates are correct for board
-            draw_grid_labels(WIN, board_top_left_x, board_top_left_y, cell_size)
-            update_checkersdisplay(WIN, grid, ROWS, WIDTH)
+            drawGridLabels(WIN, board_top_left_x, board_top_left_y, cell_size)
+            updateCheckersDisplay(WIN, grid, ROWS, WIDTH)
             winner = checkersCheck_win(grid)
             if winner:
-                display_Checkerswin_screen(winner)
+                displayCheckersWinScreen(winner)
                 loop = False
 
 def checkersDebug():
@@ -1293,13 +1301,13 @@ def checkersDebug():
     #pause option
     pause = False
     loop = True
-    grid = make_testcheckersgrid(ROWS, WIDTH)
+    grid = makeTestCheckersGrid(ROWS, WIDTH)
     currMove = 'G'
 
     def restartCheckersDebug():
         nonlocal loop, grid, currMove, highlightedPiece
         loop = True
-        grid = make_testcheckersgrid(ROWS, WIDTH)
+        grid = makeTestCheckersGrid(ROWS, WIDTH)
         currMove = 'G'
         highlightedPiece = None
 
@@ -1349,7 +1357,7 @@ def checkersDebug():
                     else:
                         if grid[ClickedPositionColumn][ClickedPositionRow].piece:
                             if currMove == grid[ClickedPositionColumn][ClickedPositionRow].piece.team:
-                                highlightedPiece = checkershighlight(clickedNode, grid, highlightedPiece)
+                                highlightedPiece = checkersHighlight(clickedNode, grid, highlightedPiece)
         if pause:
             current_screen = pygame.display.get_surface()
             draw_pause(current_screen)
@@ -1358,11 +1366,11 @@ def checkersDebug():
             # Clear the screen
             WIN.fill((0, 0, 0))  # Black background
              # Draw the grid labels for Checkers - ensure the coordinates are correct for board
-            draw_grid_labels(WIN, board_top_left_x, board_top_left_y, cell_size)
-            update_checkersdisplay(WIN,grid,ROWS,WIDTH)
+            drawGridLabels(WIN, board_top_left_x, board_top_left_y, cell_size)
+            updateCheckersDisplay(WIN,grid,ROWS,WIDTH)
             winner = checkersCheck_win(grid)
             if winner:
-                display_Checkerswin_screen(winner)
+                displayCheckersWinScreen(winner)
                 loop = False
 
 def chessDebug():
@@ -1378,7 +1386,7 @@ def chessDebug():
     WIN = pygame.display.set_mode((window_size, window_size))
     pause = False
     loop = True
-    grid = make_testgrid(ROWS,WIDTH)
+    grid = makeTestGrid(ROWS,WIDTH)
     currMove = 'W'
     lastMove = None
     checkMate = isKingInCheckmate(currMove, grid)
@@ -1386,7 +1394,7 @@ def chessDebug():
     def restartChessDebug():
         nonlocal loop, grid, currMove, lastMove, highlightedPiece
         loop = True
-        grid = make_testgrid(ROWS, WIDTH)
+        grid = makeTestGrid(ROWS, WIDTH)
         currMove = 'W'
         lastMove = None
         highlightedPiece = None
@@ -1451,7 +1459,7 @@ def chessDebug():
                                             print("Checkmate!")
                                             #exit()
                                             winner = opposite(currMove)
-                                            display_Chesswin_screen(winner)
+                                            displayChessWinScreen(winner)
                                         else:
                                             print("Stalemate!")
                                 # Switch turns
@@ -1472,11 +1480,11 @@ def chessDebug():
                 pygame.display.flip()
             else:
                 WIN.fill((0, 0, 0))
-                draw_grid_labels(WIN, board_top_left_x, board_top_left_y, cell_size)
+                drawGridLabels(WIN, board_top_left_x, board_top_left_y, cell_size)
                 update_display(WIN,grid,ROWS,WIDTH)
-                winner = Chesscheck_win(grid)
+                winner = chessCheckWin(grid)
                 if winner:
-                    display_Chesswin_screen(winner)
+                    displayChessWinScreen(winner)
                     loop = False
 
 ''' new main function to work with both games'''
@@ -1488,13 +1496,7 @@ def main():
     print("Option3: Checkers Test")
     print("Option4: Chess Test")
     while True:
-        print("Menu")
-        print("Choose one of the following options")
-        print("Option1: Play Checkers")
-        print("Option2: Play Chess ")
-        print("Option3: Checkers Test")
-        print("Option4: Chess Test")
-        choice = input("Enter your choice 1, 2, 3, 4, or q to exit: ")
+        choice = input("Enter your choice 1, 2, 3, 4, or q to exit")
 
         if choice == '1':
             checkersGame()
