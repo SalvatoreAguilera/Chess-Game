@@ -1488,6 +1488,12 @@ def main():
     print("Option3: Checkers Test")
     print("Option4: Chess Test")
     while True:
+        print("Menu")
+        print("Choose one of the following options")
+        print("Option1: Play Checkers")
+        print("Option2: Play Chess ")
+        print("Option3: Checkers Test")
+        print("Option4: Chess Test")
         choice = input("Enter your choice 1, 2, 3, 4, or q to exit: ")
 
         if choice == '1':
