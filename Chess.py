@@ -1480,15 +1480,12 @@ def chessDebug():
 
 ''' new main function to work with both games'''
 def main():
-    #checkMate = isKingInCheckmate(currMove, grid)
     print("Menu")
     print("Choose one of the following options")
     print("Option1: Play Checkers")
     print("Option2: Play Chess ")
     print("Option3: Checkers Test")
     print("Option4: Chess Test")
-    # Start the game loop
-    #while checkMate is not True:
     while True:
         choice = input("Enter your choice 1, 2, 3, 4, or q to exit")
 
@@ -1504,7 +1501,7 @@ def main():
         elif choice == '4':
             chessDebug()
 
-        elif choice == '5':
+        elif choice == 'q':
             pygame.quit()
             sys.exit()
 
