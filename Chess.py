@@ -1,5 +1,5 @@
 #Class Project pygame chess
-#members: Jonathan Morley, , ,
+#members: Jonathan Morley,Irene Chavez , ,
 #Version 1.3 "broken en passant and pawn promotion"
 #11/27/23 not done at 2:17 A.M.
 #
