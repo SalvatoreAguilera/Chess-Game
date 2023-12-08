@@ -3,11 +3,9 @@
 #Version 1.3 "broken en passant and pawn promotion"
 #11/27/23 not done at 2:17 A.M.
 #
-import tkinter as tk
+
 import pygame
-import random
 import sys
-from itertools import combinations
 import os
 
 # current directory
@@ -49,7 +47,7 @@ CHECKERSBLUE = (76, 252, 241)
 
 pygame.init()
 WIN = pygame.display.set_mode((WIDTH,WIDTH))
-#pygame.display.set_caption('Chess')
+
 
 priorMoves=[]
 class Node:
@@ -95,78 +93,6 @@ class LastMove:
         self.start_pos = start_pos # The starting position of the move (tuple: (col, row))
         self.end_pos = end_pos     # The ending position of the move (tuple: (col, row))
         self.move_type = move_type # Type of move (e.g., "en_passant", "castle", "two_step_pawn", etc.)
-
-############ START PAWN PROMOTION ############
-
-def promotePawn(grid, pawnPos, team):
-    # Display promotion options
-    print("Promote Pawn function called")
-    promotion_options = displayPromotionOptions(team)
-    # Wait for player input and get the selected piece
-    selectedPieceType = getPlayerChoice(promotion_options)
-    # Replace the pawn with the new piece
-    print(f"Selected piece for promotion: {selectedPieceType}")
-    new_piece = None
-    if selectedPieceType == 'queen':
-        new_piece = Piece(team, 'QUEEN', WQUEEN if team == 'W' else BQUEEN)
-    elif selectedPieceType == 'rook':
-        new_piece = Piece(team, 'ROOK', WROOK if team == 'W' else BROOK)
-    elif selectedPieceType == 'knight':
-        new_piece = Piece(team, 'KNIGHT', WKNIGHT if team == 'W' else BKNIGHT)
-    elif selectedPieceType == 'bishop':
-        new_piece = Piece(team, 'BISHOP', WBISHOP if team == 'W' else BBISHOP)
-    if new_piece:
-        grid[pawnPos[0]][pawnPos[1]].piece = new_piece
-        print(f"Promotion: {new_piece.type} created for team {new_piece.team}")
-        update_display(WIN, grid, ROWS, WIDTH)
-    else:
-        print("Error: promotion not created")
-
-def displayPromotionOptions(team):
-    # Set the size of each promotion option icon
-    icon_size = WIDTH // ROWS // 2
-    # Set the starting position for the icons, this can be adjusted based on your UI layout
-    start_x = WIDTH // 2 - 2 * icon_size
-    start_y = 10  # Some margin from the top
-
-    # Load the images for each promotion option
-    queen_img = pygame.transform.scale(WQUEEN if team == 'W' else BQUEEN, (icon_size, icon_size))
-    rook_img = pygame.transform.scale(WROOK if team == 'W' else BROOK, (icon_size, icon_size))
-    bishop_img = pygame.transform.scale(WBISHOP if team == 'W' else BBISHOP, (icon_size, icon_size))
-    knight_img = pygame.transform.scale(WKNIGHT if team == 'W' else BKNIGHT, (icon_size, icon_size))
-
-    # Define rectangles for each option for click detection
-    queen_rect = pygame.Rect(start_x, start_y, icon_size, icon_size)
-    rook_rect = pygame.Rect(start_x + icon_size, start_y, icon_size, icon_size)
-    bishop_rect = pygame.Rect(start_x + 2 * icon_size, start_y, icon_size, icon_size)
-    knight_rect = pygame.Rect(start_x + 3 * icon_size, start_y, icon_size, icon_size)
-
-    # Draw the options on the screen
-    WIN.blit(queen_img, queen_rect)
-    WIN.blit(rook_img, rook_rect)
-    WIN.blit(bishop_img, bishop_rect)
-    WIN.blit(knight_img, knight_rect)
-    pygame.display.update()
-
-    # Return the rectangles for click detection
-    return {"queen": queen_rect, "rook": rook_rect, "bishop": bishop_rect, "knight": knight_rect}
-
-def getPlayerChoice(promotion_options):
-    # Loop until a valid choice is made
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                # Get the mouse click position
-                mouse_x, mouse_y = pygame.mouse.get_pos()
-
-                # Check if the click is within any of the promotion option rectangles
-                for piece, rect in promotion_options.items():
-                    if rect.collidepoint(mouse_x, mouse_y):
-                        return piece  # Return the name of the chosen piece
-############ END PAWN PROMOTION ############
 
 def make_grid(rows, width):
     #initialize grid array
@@ -232,6 +158,37 @@ def draw_grid(win, rows, width):
         for j in range(rows):
             pygame.draw.line(win, BLACK, (j * gap, 0), (j * gap, width))
 
+def draw_pause(window):
+    # Create a surface to cover the screen
+    overlay = pygame.Surface(window.get_size(), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 128))
+    window.blit(overlay, (0, 0))
+
+    # Define button dimensions and positions
+    button_width, button_height = 200, 50
+    x = (window.get_width() - button_width) // 2
+    y_start = (window.get_height() - 3 * button_height) // 2
+
+    # button texts
+    button_texts = ["To Menu", "Restart", "Quit"]
+
+    # create and draw the rectangles
+    menu_button = pygame.Rect(x, y_start, button_width, button_height)
+    restart_button = pygame.Rect(x, y_start + button_height + 10, button_width, button_height)
+    quit_button  = pygame.Rect(x, y_start + 2 * (button_height + 10), button_width, button_height)
+    # Load font
+    font = pygame.font.SysFont(None, 36)
+
+    for i, rect in enumerate([menu_button, restart_button, quit_button]):
+        pygame.draw.rect(window, (255, 255, 255), rect)  # White color for the buttons
+        text_surface = font.render(button_texts[i], True, (0, 0, 0))  # Black color for the text
+        text_rect = text_surface.get_rect(center=rect.center)
+        window.blit(text_surface, text_rect)
+
+
+    # Return the rectangles
+    return [quit_button, restart_button, menu_button]
+
 def update_display(win, grid, rows, width):
     for row in grid:
         for spot in row:
@@ -270,9 +227,9 @@ def pawnMoves(col, row, grid, lastMove):
                     if lastMove.end_pos[1] == row + dx:  # The last move's pawn must be adjacent to the current pawn
                         en_passant_capture = [direction, dx]
                         vectors.append(en_passant_capture)
-                        
-                        
-                        
+
+
+
 
     return vectors
 
@@ -399,7 +356,7 @@ def move(grid, piecePosition, newPosition, lastMove):
     # Check for en passant
     if piece.type == 'PAWN' and newColumn != oldColumn and not grid[newColumn][newRow].piece:
         # This is a diagonal move without a normal capture, potential en passant
-        
+
         if lastMove and lastMove.piece.type == 'PAWN' and abs(lastMove.start_pos[0] - lastMove.end_pos[0]) == 2:
             if lastMove.end_pos[1] == newRow and abs(lastMove.end_pos[1] - oldRow) == 1:
                 # Remove the pawn that was "passed over" during en passant
@@ -545,6 +502,8 @@ def getNode(rows, width):
     gap = width // rows
     # Get the current mouse position.
     RowX, RowY = pygame.mouse.get_pos()
+    if RowX < 0 or RowX >= width or RowY < 0 or RowY >= width:
+        return None  # Click is outside the board
     # The division by 'gap' translates the pixel position to the grid position.
     Row = RowX // gap
     Col = RowY // gap
@@ -680,7 +639,81 @@ def isKingInCheckmate(currMove, grid):
 
     # If no move takes the king out of check, it's checkmate
     return True
-#checking for winner  
+
+############ START PAWN PROMOTION ############
+
+def promotePawn(grid, pawnPos, team):
+    # Display promotion options
+    print("Promote Pawn function called")
+    promotion_options = displayPromotionOptions(team)
+    # Wait for player input and get the selected piece
+    selectedPieceType = getPlayerChoice(promotion_options)
+    # Replace the pawn with the new piece
+    print(f"Selected piece for promotion: {selectedPieceType}")
+    new_piece = None
+    if selectedPieceType == 'queen':
+        new_piece = Piece(team, 'QUEEN', WQUEEN if team == 'W' else BQUEEN)
+    elif selectedPieceType == 'rook':
+        new_piece = Piece(team, 'ROOK', WROOK if team == 'W' else BROOK)
+    elif selectedPieceType == 'knight':
+        new_piece = Piece(team, 'KNIGHT', WKNIGHT if team == 'W' else BKNIGHT)
+    elif selectedPieceType == 'bishop':
+        new_piece = Piece(team, 'BISHOP', WBISHOP if team == 'W' else BBISHOP)
+    if new_piece:
+        grid[pawnPos[0]][pawnPos[1]].piece = new_piece
+        print(f"Promotion: {new_piece.type} created for team {new_piece.team}")
+        update_display(WIN, grid, ROWS, WIDTH)
+    else:
+        print("Error: promotion not created")
+
+def displayPromotionOptions(team):
+    # Set the size of each promotion option icon
+    icon_size = WIDTH // ROWS // 2
+    # Set the starting position for the icons, this can be adjusted based on your UI layout
+    start_x = WIDTH // 2 - 2 * icon_size
+    start_y = 10  # Some margin from the top
+
+    # Load the images for each promotion option
+    queen_img = pygame.transform.scale(WQUEEN if team == 'W' else BQUEEN, (icon_size, icon_size))
+    rook_img = pygame.transform.scale(WROOK if team == 'W' else BROOK, (icon_size, icon_size))
+    bishop_img = pygame.transform.scale(WBISHOP if team == 'W' else BBISHOP, (icon_size, icon_size))
+    knight_img = pygame.transform.scale(WKNIGHT if team == 'W' else BKNIGHT, (icon_size, icon_size))
+
+    # Define rectangles for each option for click detection
+    queen_rect = pygame.Rect(start_x, start_y, icon_size, icon_size)
+    rook_rect = pygame.Rect(start_x + icon_size, start_y, icon_size, icon_size)
+    bishop_rect = pygame.Rect(start_x + 2 * icon_size, start_y, icon_size, icon_size)
+    knight_rect = pygame.Rect(start_x + 3 * icon_size, start_y, icon_size, icon_size)
+
+    # Draw the options on the screen
+    WIN.blit(queen_img, queen_rect)
+    WIN.blit(rook_img, rook_rect)
+    WIN.blit(bishop_img, bishop_rect)
+    WIN.blit(knight_img, knight_rect)
+    pygame.display.update()
+
+    # Return the rectangles for click detection
+    return {"queen": queen_rect, "rook": rook_rect, "bishop": bishop_rect, "knight": knight_rect}
+
+def getPlayerChoice(promotion_options):
+    # Loop until a valid choice is made
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                # Get the mouse click position
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+
+                # Check if the click is within any of the promotion option rectangles
+                for piece, rect in promotion_options.items():
+                    if rect.collidepoint(mouse_x, mouse_y):
+                        return piece  # Return the name of the chosen piece
+
+############ END PAWN PROMOTION ############
+
+#checking for winner
 def Chesscheck_win(grid):
     white_count = 0
     black_count = 0
@@ -698,7 +731,7 @@ def Chesscheck_win(grid):
         return 'W'  # White wins
 
     return None  # No winner yet
-#win screen display 
+#win screen display
 def display_Chesswin_screen(winner):
     font = pygame.font.Font(None, 65)
 
@@ -709,7 +742,7 @@ def display_Chesswin_screen(winner):
     grey_box.fill((50, 50, 50))  # Black color
 
     # Get the dimensions of the text
-    text = font.render(f"{winner} Wins! Check terminal for options", True, CHECKERSBLUE)
+    text = font.render(f"{winner} Wins! Press Esc for options", True, CHECKERSBLUE)
     text_width, text_height = text.get_size()
     HEIGHT = 600
     # Calculate the position of the black box
@@ -725,7 +758,7 @@ def display_Chesswin_screen(winner):
 
     # Draw the text on top of the black box
     WIN.blit(text, (text_x, text_y))
-    
+
     pygame.display.update()
     pygame.time.delay(3000)  # Display for 3 seconds
 
@@ -749,42 +782,43 @@ def make_testgrid(rows, width):
             if abs(i-j) % 2 == 0:
                 node.colour=BLACK
             # Initialize pawns on the 2nd and 7th rows.
-            if i == 1 and j == 0 or i ==1 and j == 1 or i ==1 and j == 2 or i ==1 and j ==4 or i ==1 and j ==5 or i ==1 and j ==6 or i == 1 and j ==7 or i ==3 and j ==3 :
+            if(i,j) in [(1,0), (1,1), (1,2), (2,3), (3,4), (1,5), (1,6), (1,7)]:
                 node.piece = Piece('B','PAWN',BPAWN)
-            if i == 6 and j == 0 or i == 6 and j == 1 or i ==6 and j == 2 or i ==6 and j ==5 or i ==6 and j ==6 or i == 6 and j ==7 or i == 4 and j == 3 or i ==5 and j ==4:
+            if(i,j) in [(6,0), (6,1), (6,2), (6,3), (4,4), (6,5), (6,6), (6,7)]:
                 node.piece = Piece('W','PAWN',WPAWN)
 
             #  Place rooks in the corners of the board.
-            if i == 0 and j == 7 or i == 0 and j == 2:
+            if i == 0 and j == 0 or i == 0 and j == 7:
                 node.piece = Piece('B','ROOK', BROOK)
-            if i == 7 and j == 0 or j == 7 and i == 7:
+            if i == 7 and j == 0 or i == 7 and j == 5:
                 node.piece = Piece('W','ROOK', WROOK)
 
             # Initialize knights next to the rooks.
             if i == 2 and j == 2 or i == 3 and j == 7:
                 node.piece = Piece('B','KNIGHT', BKNIGHT)
-            if i == 5 and j == 2 or j == 5 and i == 5:
+            if i == 4 and j == 0 or i == 5 and j == 5:
                 node.piece = Piece('W','KNIGHT', WKNIGHT)
 
             # Place bishops next to the knights.
-            if i == 0 and j == 5 or i == 4 and j == 6:
+            if i == 1 and j == 4 or i == 2 and j == 4:
                 node.piece = Piece('B','BISHOP', BBISHOP)
-            if i == 6 and j == 3 or j == 3 and i == 5:
+            if i == 3 and j == 2 or i == 7 and j == 2:
                 node.piece = Piece('W','BISHOP', WBISHOP)
 
             #  Set the king and queen in the middle of the first and last rows.
-            if i == 0 and j == 1:
-                node.piece = Piece('B','KING', BKING)
-            if i == 7 and j == 3:
-                node.piece = Piece('W','KING', WKING)
             if i == 0 and j == 4:
+                node.piece = Piece('B','KING', BKING)
+            if i == 7 and j == 6:
+                node.piece = Piece('W','KING', WKING)
+            if i == 2 and j == 7:
                 node.piece = Piece('B','QUEEN', BQUEEN)
-            if i == 5 and j == 0:
+            if i == 7 and j == 3:
                 node.piece = Piece('W','QUEEN', WQUEEN)
 
             # Add the node to the current row in the grid.
             grid[i].append(node)
     return grid
+
 '''adding all of the checkers functions so both games are in one file'''
 class checkersNode:
     def __init__(self, row, col, width):
@@ -849,6 +883,8 @@ class checkersPiece:
 def getCheckersNode(grid, rows, width):
     gap = width//rows
     RowX,RowY = pygame.mouse.get_pos()
+    if RowX < 0 or RowX >= width or RowY < 0 or RowY >= width:
+        return None  # Click is outside the board
     Row = RowX//gap
     Col = RowY//gap
     return (Col,Row)
@@ -894,10 +930,6 @@ def generatePotentialCheckersMoves(nodePosition, grid):
 
     return positions
 
-
-"""
-Error with locating possible moves row col error
-"""
 def checkershighlight(ClickedNode, Grid, OldHighlight):
     Column,Row = ClickedNode
     Grid[Column][Row].colour=CHECKERSORANGE
@@ -970,7 +1002,7 @@ def display_Checkerswin_screen(winner):
 
     # Draw the text on top of the black box
     WIN.blit(text, (text_x, text_y))
-    
+
     pygame.display.update()
     pygame.time.delay(3000)  # Display for 3 seconds
 
@@ -1001,7 +1033,7 @@ def make_testcheckersgrid(rows, width):
                 node.piece = checkersPiece('G')
             elif i == 6 and (j == 0 or j == 2 or j == 6):
                 node.piece = checkersPiece('G')
-        
+
             if i == 7 and j == 3:
                 node.piece = checkersPiece('R')
                 node.piece.type = 'KING'
@@ -1011,16 +1043,443 @@ def make_testcheckersgrid(rows, width):
     return grid
 '''end of checkers funtions'''
 
-''' new main function to work with both games'''
-def main(WIDTH,ROWS):
-    # Initialize the chess grid with nodes and pieces
-    #grid = make_grid(ROWS, WIDTH)
+def draw_grid_labels(surface, top_left_x, top_left_y, cell_size):
+    font = pygame.font.SysFont(None, 24)
+    text_color = (255, 255, 255)  # White color for the text
+
+    # Draw the column letters (A-H) on top and bottom
+    for i in range(8):
+        col_text = font.render(chr(65 + i), True, text_color)
+        # Top
+        surface.blit(col_text, (top_left_x + i * cell_size + cell_size // 2, top_left_y - 20))
+        # Bottom
+        surface.blit(col_text, (top_left_x + i * cell_size + cell_size // 2, top_left_y + 8 * cell_size))
+
+    # Draw the row numbers (1-8) on left and right
+    for i in range(8):
+        row_text = font.render(str(8 - i), True, text_color)
+        # Left
+        surface.blit(row_text, (top_left_x - 20, top_left_y + i * cell_size + cell_size // 2))
+        # Right
+        surface.blit(row_text, (top_left_x + 8 * cell_size, top_left_y + i * cell_size + cell_size // 2))
+
+def chessGame():
     # Track the currently highlighted piece, initially set to None
     highlightedPiece = None
-    # Set the current move to 'W' (White) as the starting player
-    #currMove = 'W'
-    #lastMove = None  # Initialize lastMove as None
 
+    # Define the additional space needed for labels around the board
+    label_space = 40  # Example space for labels
+    # Increase the size of the window to accommodate the labels
+    window_size = WIDTH + label_space * 2
+    board_size = WIDTH
+    cell_size = board_size // ROWS
+    # Increase the grid size to accommodate labels
+    background_size = board_size + 40  # Adding extra space for labels
+    board_top_left_x = (background_size - board_size) // 2
+    board_top_left_y = (background_size - board_size) // 2
+
+    # Initialize the window with the new size
+    WIN = pygame.display.set_mode((window_size, window_size))
+    pause = False
+    loop = True
+    grid = make_grid(ROWS,WIDTH)
+    currMove = 'W'
+    lastMove = None
+
+    #local functions for pause menu
+    def restartChessGame():
+        nonlocal loop, grid, currMove, lastMove, highlightedPiece
+        loop = True
+        grid = make_grid(ROWS, WIDTH)
+        currMove = 'W'
+        lastMove = None
+        highlightedPiece = None
+
+    def returnToMainMenu():
+        nonlocal loop
+        loop = False
+        main()#going back to the main menu
+
+    pause_buttons = None
+
+    while loop:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                print('EXIT SUCCESSFUL')
+                pygame.quit()
+                sys.exit()
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pause = not pause
+                if pause:
+                    pause_buttons = draw_pause(WIN)  # Update pause_buttons here
+
+            #pause menu buttons, 1 to quit program, 2 to restart game, 3 to return to text menu
+            if pause and event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                if pause_buttons[0].collidepoint(mouse_x, mouse_y):
+                    pygame.quit()
+                    sys.exit()
+                elif pause_buttons[1].collidepoint(mouse_x, mouse_y):
+                    restartChessGame()
+                    pause = False
+                elif pause_buttons[2].collidepoint(mouse_x, mouse_y):
+                    return returnToMainMenu()
+
+            if event.type == pygame.MOUSEBUTTONDOWN and not pause:
+                clickedNode = getNode(ROWS, WIDTH)
+                if clickedNode is not None:  # Add this check
+                    ClickedPositionColumn, ClickedPositionRow = clickedNode
+                    # Check if a valid move is made (blue colored cell)
+                    if grid[ClickedPositionColumn][ClickedPositionRow].colour == BLUE:
+                        if highlightedPiece:
+                            pieceColumn, pieceRow = highlightedPiece
+                        if currMove == grid[pieceColumn][pieceRow].piece.team:
+                            # Try to execute the move
+                            moveSuccessful = move(grid, highlightedPiece, clickedNode, lastMove)
+                            if moveSuccessful:
+                                # Move was successful, update lastMove, switch turns, etc.
+                                # Reset colors of the previous move
+                                resetColours(grid, highlightedPiece,lastMove)
+                                # Update lastMove object with new move details
+                                movedPiece = grid[ClickedPositionColumn][ClickedPositionRow].piece
+                                lastMove = LastMove(movedPiece, highlightedPiece, clickedNode)
+                                highlightedPiece = None  # Reset the highlighted piece so no cell is marked as selected
+                                # Add additional details if necessary, possibly move type?
+                                # After a move is made, check if the king is in check
+                                if isKingInCheck(opposite(currMove), grid):
+                                    print("Check!")  # Notify the player
+                                    # Determine if the opponent can move out of check
+                                    if not canMoveOutOfCheck(opposite(currMove), grid):
+                                        if isKingInCheckmate(opposite(currMove), grid):
+                                            print("Checkmate!")
+                                            update_display(WIN,grid,ROWS,WIDTH)
+                                            winner = opposite(currMove)
+                                            display_Chesswin_screen(winner)
+                                        else:
+                                            print("Stalemate!")
+                                # Switch turns
+                                currMove = opposite(currMove)
+                            else:
+                                # Move was not successful (would put/leave king in check), handle accordingly
+                                print("Illegal move: would put/leave king in check.")
+                                # Do not switch turns, allow the player to make another move
+                    elif highlightedPiece == clickedNode:
+                            pass
+                    else:
+                        if grid[ClickedPositionColumn][ClickedPositionRow].piece:
+                            if currMove == grid[ClickedPositionColumn][ClickedPositionRow].piece.team:
+                                highlightedPiece = highlight(clickedNode, grid, highlightedPiece, lastMove)
+
+        if pause:
+            current_screen = pygame.display.get_surface()
+            draw_pause(current_screen)
+            pygame.display.flip()  # Update the display
+        else:
+            # Clear the screen
+            WIN.fill((0, 0, 0))  # Black background
+            # Draw the grid labels
+            draw_grid_labels(WIN, board_top_left_x, board_top_left_y, cell_size)
+            update_display(WIN,grid,ROWS,WIDTH)
+            #pygame.display.flip()
+            winner = Chesscheck_win(grid)
+            if winner:
+                display_Chesswin_screen(winner)
+                loop = False
+
+def checkersGame():
+# Track the currently highlighted piece, initially set to None
+    highlightedPiece = None
+    # Example: If WIDTH is the width of the game board, add additional space for UI elements if needed
+    # Define the additional space needed for labels around the board
+    label_space = 40  # Example space for labels
+    # Increase the size of the window to accommodate the labels
+    window_size = WIDTH + label_space * 2
+    board_size = WIDTH
+    cell_size = board_size // ROWS
+    # Increase the grid size to accommodate labels
+    background_size = board_size + 40  # Adding extra space for labels
+    board_top_left_x = (background_size - board_size) // 2
+    board_top_left_y = (background_size - board_size) // 2
+    # Initialize the window with the new size
+    WIN = pygame.display.set_mode((window_size, window_size))
+    #pause option
+    pause = False
+    loop = True
+    grid = make_checkersgrid(ROWS, WIDTH)
+    currMove = 'G'
+
+    def restartCheckersGame():
+        nonlocal loop, grid, currMove, highlightedPiece
+        loop = True
+        grid = make_checkersgrid(ROWS, WIDTH)
+        currMove = 'G'
+        highlightedPiece = None
+
+    def returnToMainMenu():
+        nonlocal loop
+        loop = False
+        main()
+
+    pause_buttons = None
+
+    while loop:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                print('EXIT SUCCESSFUL')
+                pygame.quit()
+                sys.exit()
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pause = not pause
+                if pause:
+                    pause_buttons = draw_pause(WIN)
+
+            if pause and event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                if pause_buttons[0].collidepoint(mouse_x, mouse_y):
+                    pygame.quit()
+                    sys.exit()
+                elif pause_buttons[1].collidepoint(mouse_x, mouse_y):
+                    restartCheckersGame()
+                    pause = False
+                elif pause_buttons[2].collidepoint(mouse_x, mouse_y):
+                    return returnToMainMenu()
+
+            if not pause and event.type == pygame.MOUSEBUTTONDOWN:
+                clickedNode = getCheckersNode(grid,ROWS,WIDTH)
+                if clickedNode is not None:
+                    ClickedPositionColumn, ClickedPositionRow = clickedNode
+                    if grid[ClickedPositionColumn][ClickedPositionRow].colour == CHECKERSBLUE:
+                        if highlightedPiece:
+                            pieceColumn, pieceRow = highlightedPiece
+                            if currMove == grid[pieceColumn][pieceRow].piece.team:
+                                resetCheckersColours(grid,highlightedPiece)
+                                currMove=checkersmove(grid,highlightedPiece,clickedNode)
+                    elif highlightedPiece == clickedNode:
+                        pass
+                    else:
+                        if grid[ClickedPositionColumn][ClickedPositionRow].piece:
+                            if currMove == grid[ClickedPositionColumn][ClickedPositionRow].piece.team:
+                                highlightedPiece = checkershighlight(clickedNode, grid, highlightedPiece)
+        if pause:
+            current_screen = pygame.display.get_surface()
+            draw_pause(current_screen)
+            pygame.display.flip()
+        else:
+            # Clear the screen
+            WIN.fill((0, 0, 0))  # Black background
+             # Draw the grid labels for Checkers - ensure the coordinates are correct for board
+            draw_grid_labels(WIN, board_top_left_x, board_top_left_y, cell_size)
+            update_checkersdisplay(WIN, grid, ROWS, WIDTH)
+            winner = checkersCheck_win(grid)
+            if winner:
+                display_Checkerswin_screen(winner)
+                loop = False
+
+def checkersDebug():
+    highlightedPiece = None
+    label_space = 40
+    window_size = WIDTH + label_space * 2
+    board_size = WIDTH
+    cell_size = board_size // ROWS
+    background_size = board_size + 40  # Adding extra space for labels
+    board_top_left_x = (background_size - board_size) // 2
+    board_top_left_y = (background_size - board_size) // 2
+    WIN = pygame.display.set_mode((window_size, window_size))
+    #pause option
+    pause = False
+    loop = True
+    grid = make_testcheckersgrid(ROWS, WIDTH)
+    currMove = 'G'
+
+    def restartCheckersDebug():
+        nonlocal loop, grid, currMove, highlightedPiece
+        loop = True
+        grid = make_testcheckersgrid(ROWS, WIDTH)
+        currMove = 'G'
+        highlightedPiece = None
+
+    def returnToMainMenu():
+        nonlocal loop
+        loop = False
+        main()
+
+    pause_buttons = None
+
+    while loop:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                print('EXIT SUCCESSFUL')
+                pygame.quit()
+                sys.exit()
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pause = not pause
+                if pause:
+                    pause_buttons = draw_pause(WIN)
+
+            if pause and event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                if pause_buttons[0].collidepoint(mouse_x, mouse_y):
+                    pygame.quit()
+                    sys.exit()
+                elif pause_buttons[1].collidepoint(mouse_x, mouse_y):
+                    restartCheckersDebug()
+                    pause = False
+                elif pause_buttons[2].collidepoint(mouse_x, mouse_y):
+                    return returnToMainMenu()
+
+            if not pause and event.type == pygame.MOUSEBUTTONDOWN:
+                clickedNode = getCheckersNode(grid,ROWS,WIDTH)
+                if clickedNode is not None:
+                    ClickedPositionColumn, ClickedPositionRow = clickedNode
+                    if grid[ClickedPositionColumn][ClickedPositionRow].colour == CHECKERSBLUE:
+                        if highlightedPiece:
+                            pieceColumn, pieceRow = highlightedPiece
+                            if currMove == grid[pieceColumn][pieceRow].piece.team:
+                                resetCheckersColours(grid,highlightedPiece)
+                                currMove=checkersmove(grid,highlightedPiece,clickedNode)
+                    elif highlightedPiece == clickedNode:
+                        pass
+                    else:
+                        if grid[ClickedPositionColumn][ClickedPositionRow].piece:
+                            if currMove == grid[ClickedPositionColumn][ClickedPositionRow].piece.team:
+                                highlightedPiece = checkershighlight(clickedNode, grid, highlightedPiece)
+        if pause:
+            current_screen = pygame.display.get_surface()
+            draw_pause(current_screen)
+            pygame.display.flip()
+        else:
+            # Clear the screen
+            WIN.fill((0, 0, 0))  # Black background
+             # Draw the grid labels for Checkers - ensure the coordinates are correct for board
+            draw_grid_labels(WIN, board_top_left_x, board_top_left_y, cell_size)
+            update_checkersdisplay(WIN,grid,ROWS,WIDTH)
+            winner = checkersCheck_win(grid)
+            if winner:
+                display_Checkerswin_screen(winner)
+                loop = False
+
+def chessDebug():
+    highlightedPiece = None
+    label_space = 40
+    window_size = WIDTH + label_space * 2
+    board_size = WIDTH
+    cell_size = board_size // ROWS
+    # Increase the grid size to accommodate labels
+    background_size = board_size + 40  # Adding extra space for labels
+    board_top_left_x = (background_size - board_size) // 2
+    board_top_left_y = (background_size - board_size) // 2
+    WIN = pygame.display.set_mode((window_size, window_size))
+    pause = False
+    loop = True
+    grid = make_testgrid(ROWS,WIDTH)
+    currMove = 'W'
+    lastMove = None
+    checkMate = isKingInCheckmate(currMove, grid)
+
+    def restartChessDebug():
+        nonlocal loop, grid, currMove, lastMove, highlightedPiece
+        loop = True
+        grid = make_testgrid(ROWS, WIDTH)
+        currMove = 'W'
+        lastMove = None
+        highlightedPiece = None
+
+    def returnToMainMenu():
+        nonlocal loop
+        loop = False
+        main(WIDTH, ROWS)#going back to the main menu
+
+    pause_buttons = None
+
+    while loop:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                print('EXIT SUCCESSFUL')
+                pygame.quit()
+                sys.exit()
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pause = not pause
+                if pause:
+                    pause_buttons = draw_pause(WIN)
+
+            if pause and event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                if pause_buttons[0].collidepoint(mouse_x, mouse_y):
+                    pygame.quit()
+                    sys.exit()
+                elif pause_buttons[1].collidepoint(mouse_x, mouse_y):
+                    restartChessDebug()
+                    pause = False
+                elif pause_buttons[2].collidepoint(mouse_x, mouse_y):
+                    return returnToMainMenu()
+
+            if not pause and event.type == pygame.MOUSEBUTTONDOWN:
+                clickedNode = getNode(ROWS, WIDTH)
+                if clickedNode is not None:
+                    ClickedPositionColumn, ClickedPositionRow = clickedNode
+                    # Check if a valid move is made (blue colored cell)
+                    if grid[ClickedPositionColumn][ClickedPositionRow].colour == BLUE:
+                        if highlightedPiece:
+                            pieceColumn, pieceRow = highlightedPiece
+                        if currMove == grid[pieceColumn][pieceRow].piece.team:
+                            # Try to execute the move
+                            moveSuccessful = move(grid, highlightedPiece, clickedNode, lastMove)
+                            if moveSuccessful:
+                                # Move was successful, update lastMove, switch turns, etc.
+                                # Reset colors of the previous move
+                                resetColours(grid, highlightedPiece,lastMove)
+                                # Update lastMove object with new move details
+                                movedPiece = grid[ClickedPositionColumn][ClickedPositionRow].piece
+                                lastMove = LastMove(movedPiece, highlightedPiece, clickedNode)
+                                highlightedPiece = None  # Reset the highlighted piece so no cell is marked as selected
+                                # Add additional details if necessary, possibly move type?
+                                # After a move is made, check if the king is in check
+                                if isKingInCheck(opposite(currMove), grid):
+                                    print("Check!")  # Notify the player
+                                    # Determine if the opponent can move out of check
+                                    if not canMoveOutOfCheck(opposite(currMove), grid):
+                                        if isKingInCheckmate(opposite(currMove), grid):
+                                            print("Checkmate!")
+                                            #exit()
+                                            winner = opposite(currMove)
+                                            display_Chesswin_screen(winner)
+                                        else:
+                                            print("Stalemate!")
+                                # Switch turns
+                                currMove = opposite(currMove)
+                            else:
+                                # Move was not successful (would put/leave king in check), handle accordingly
+                                print("Illegal move: would put/leave king in check.")
+                                # Do not switch turns, allow the player to make another move
+                    elif highlightedPiece == clickedNode:
+                            pass
+                    else:
+                        if grid[ClickedPositionColumn][ClickedPositionRow].piece:
+                            if currMove == grid[ClickedPositionColumn][ClickedPositionRow].piece.team:
+                                highlightedPiece = highlight(clickedNode, grid, highlightedPiece, lastMove)
+            if pause:
+                current_screen = pygame.display.get_surface()
+                draw_pause(current_screen)
+                pygame.display.flip()
+            else:
+                WIN.fill((0, 0, 0))
+                draw_grid_labels(WIN, board_top_left_x, board_top_left_y, cell_size)
+                update_display(WIN,grid,ROWS,WIDTH)
+                winner = Chesscheck_win(grid)
+                if winner:
+                    display_Chesswin_screen(winner)
+                    loop = False
+
+''' new main function to work with both games'''
+def main():
     #checkMate = isKingInCheckmate(currMove, grid)
     print("Menu")
     print("Choose one of the following options")
@@ -1028,11 +1487,10 @@ def main(WIDTH,ROWS):
     print("Option2: Play Chess ")
     print("Option3: Checkers Test")
     print("Option4: Chess Test")
-    int_choice = -1
     # Start the game loop
     #while checkMate is not True:
     while True:
-        choice = input("Enter your choice [1 2 3 or 4]: ")
+        choice = input("Enter your choice 1, 2, 3, or 4")
         print("Menu")
         print("Choose one of the following options")
         print("Option1: Play Checkers")
@@ -1040,264 +1498,17 @@ def main(WIDTH,ROWS):
         print("Option3: Checkers Test")
         print("Option4: Chess Test")
         if choice == '1':
-            int_choice = 1
-            loop = True
-            grid = make_checkersgrid(ROWS, WIDTH)
-            currMove = 'G'
-            while loop: 
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        print('EXIT SUCCESSFUL')
-                        pygame.quit()
-                        sys.exit()
+            checkersGame()
 
-                    if event.type == pygame.MOUSEBUTTONDOWN:
-                        clickedNode = getCheckersNode(grid,ROWS,WIDTH)
-                        ClickedPositionColumn, ClickedPositionRow = clickedNode
-                        if grid[ClickedPositionColumn][ClickedPositionRow].colour == CHECKERSBLUE:
-                            if highlightedPiece:
-                                pieceColumn, pieceRow = highlightedPiece
-                                if currMove == grid[pieceColumn][pieceRow].piece.team:
-                                    resetCheckersColours(grid,highlightedPiece)
-                                    currMove=checkersmove(grid,highlightedPiece,clickedNode)
-                        elif highlightedPiece == clickedNode:
-                            pass
-                        else:
-                            if grid[ClickedPositionColumn][ClickedPositionRow].piece:
-                                if currMove == grid[ClickedPositionColumn][ClickedPositionRow].piece.team:
-                                    highlightedPiece = checkershighlight(clickedNode, grid, highlightedPiece)
-                update_checkersdisplay(WIN,grid,ROWS,WIDTH)
-                winner = checkersCheck_win(grid)
-                if winner:
-                    #print(f"{winner} wins!")
-                    display_Checkerswin_screen(winner)
-                    loop = False
         elif choice == '2':
-            int_choice = 2
-            loop = True
-            grid = make_grid(ROWS,WIDTH)
-            currMove = 'W'
-            lastMove = None
-            checkMate = isKingInCheckmate(currMove, grid) 
-            while loop:           
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        print('EXIT SUCCESSFUL')
-                        pygame.quit()
-                        sys.exit()
+            chessGame()
 
-                    if event.type == pygame.MOUSEBUTTONDOWN:
-                        clickedNode = getNode(ROWS, WIDTH)
-                        ClickedPositionColumn, ClickedPositionRow = clickedNode
-                        # Check if a valid move is made (blue colored cell)
-                        if grid[ClickedPositionColumn][ClickedPositionRow].colour == BLUE:
-                            if highlightedPiece:
-                                pieceColumn, pieceRow = highlightedPiece
-                            if currMove == grid[pieceColumn][pieceRow].piece.team:
-                                # Try to execute the move
-                                moveSuccessful = move(grid, highlightedPiece, clickedNode, lastMove)
-                                if moveSuccessful:
-                                    # Move was successful, update lastMove, switch turns, etc.
-                                    # Reset colors of the previous move
-                                    resetColours(grid, highlightedPiece,lastMove)
-                                    # Update lastMove object with new move details
-                                    movedPiece = grid[ClickedPositionColumn][ClickedPositionRow].piece
-                                    lastMove = LastMove(movedPiece, highlightedPiece, clickedNode)
-                                    highlightedPiece = None  # Reset the highlighted piece so no cell is marked as selected
-                                    # Add additional details if necessary, possibly move type?
-                                    # After a move is made, check if the king is in check
-                                    if isKingInCheck(opposite(currMove), grid):
-                                        print("Check!")  # Notify the player
-                                        # Determine if the opponent can move out of check
-                                        if not canMoveOutOfCheck(opposite(currMove), grid):
-                                            if isKingInCheckmate(opposite(currMove), grid):
-                                                print("Checkmate!")
-                                                #exit()
-                                                winner = opposite(currMove)
-                                                display_Chesswin_screen(winner)
-                                            else:
-                                                print("Stalemate!")
-                                    # Switch turns
-                                    currMove = opposite(currMove)
-                                else:
-                                    # Move was not successful (would put/leave king in check), handle accordingly
-                                    print("Illegal move: would put/leave king in check.")
-                                    # Do not switch turns, allow the player to make another move
-                        elif highlightedPiece == clickedNode:
-                                pass
-                        else:
-                            if grid[ClickedPositionColumn][ClickedPositionRow].piece:
-                                if currMove == grid[ClickedPositionColumn][ClickedPositionRow].piece.team:
-                                    highlightedPiece = highlight(clickedNode, grid, highlightedPiece, lastMove)
-
-                    update_display(WIN,grid,ROWS,WIDTH)
-                    winner = Chesscheck_win(grid)
-                    if winner:
-                        #print(f"{winner} wins!")
-                        display_Chesswin_screen(winner)
-                        loop = False
         elif choice == '3':
-            int_choice = 3
-            loop = True
-            grid = make_testcheckersgrid(ROWS, WIDTH)
-            #grid = make_testcheckersgrid(ROWS, WIDTH)
-            currMove = 'G'
-            while loop: 
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        print('EXIT SUCCESSFUL')
-                        pygame.quit()
-                        sys.exit()
+            checkersDebug()
 
-                    if event.type == pygame.MOUSEBUTTONDOWN:
-                        clickedNode = getCheckersNode(grid,ROWS,WIDTH)
-                        ClickedPositionColumn, ClickedPositionRow = clickedNode
-                        if grid[ClickedPositionColumn][ClickedPositionRow].colour == CHECKERSBLUE:
-                            if highlightedPiece:
-                                pieceColumn, pieceRow = highlightedPiece
-                                if currMove == grid[pieceColumn][pieceRow].piece.team:
-                                    resetCheckersColours(grid,highlightedPiece)
-                                    currMove=checkersmove(grid,highlightedPiece,clickedNode)
-                        elif highlightedPiece == clickedNode:
-                            pass
-                        else:
-                            if grid[ClickedPositionColumn][ClickedPositionRow].piece:
-                                if currMove == grid[ClickedPositionColumn][ClickedPositionRow].piece.team:
-                                    highlightedPiece = checkershighlight(clickedNode, grid, highlightedPiece)
-                update_checkersdisplay(WIN,grid,ROWS,WIDTH)
-                winner = checkersCheck_win(grid)
-                if winner:
-                    #print(f"{winner} wins!")
-                    display_Checkerswin_screen(winner)
-                    loop = False
         elif choice == '4':
-            int_choice = 4
-            loop = True
-            grid = make_testgrid(ROWS,WIDTH)
-            currMove = 'W'
-            lastMove = None
-            checkMate = isKingInCheckmate(currMove, grid) 
-            while loop:           
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        print('EXIT SUCCESSFUL')
-                        pygame.quit()
-                        sys.exit()
+            chessDebug()
 
-                    if event.type == pygame.MOUSEBUTTONDOWN:
-                        clickedNode = getNode(ROWS, WIDTH)
-                        ClickedPositionColumn, ClickedPositionRow = clickedNode
-                        # Check if a valid move is made (blue colored cell)
-                        if grid[ClickedPositionColumn][ClickedPositionRow].colour == BLUE:
-                            if highlightedPiece:
-                                pieceColumn, pieceRow = highlightedPiece
-                            if currMove == grid[pieceColumn][pieceRow].piece.team:
-                                # Try to execute the move
-                                moveSuccessful = move(grid, highlightedPiece, clickedNode, lastMove)
-                                if moveSuccessful:
-                                    # Move was successful, update lastMove, switch turns, etc.
-                                    # Reset colors of the previous move
-                                    resetColours(grid, highlightedPiece,lastMove)
-                                    # Update lastMove object with new move details
-                                    movedPiece = grid[ClickedPositionColumn][ClickedPositionRow].piece
-                                    lastMove = LastMove(movedPiece, highlightedPiece, clickedNode)
-                                    highlightedPiece = None  # Reset the highlighted piece so no cell is marked as selected
-                                    # Add additional details if necessary, possibly move type?
-                                    # After a move is made, check if the king is in check
-                                    if isKingInCheck(opposite(currMove), grid):
-                                        print("Check!")  # Notify the player
-                                        # Determine if the opponent can move out of check
-                                        if not canMoveOutOfCheck(opposite(currMove), grid):
-                                            if isKingInCheckmate(opposite(currMove), grid):
-                                                print("Checkmate!")
-                                                #exit()
-                                                winner = opposite(currMove)
-                                                display_Chesswin_screen(winner)
-                                            else:
-                                                print("Stalemate!")
-                                    # Switch turns
-                                    currMove = opposite(currMove)
-                                else:
-                                    # Move was not successful (would put/leave king in check), handle accordingly
-                                    print("Illegal move: would put/leave king in check.")
-                                    # Do not switch turns, allow the player to make another move
-                        elif highlightedPiece == clickedNode:
-                                pass
-                        else:
-                            if grid[ClickedPositionColumn][ClickedPositionRow].piece:
-                                if currMove == grid[ClickedPositionColumn][ClickedPositionRow].piece.team:
-                                    highlightedPiece = highlight(clickedNode, grid, highlightedPiece, lastMove)
-
-                    update_display(WIN,grid,ROWS,WIDTH)
-                    winner = Chesscheck_win(grid)
-                    if winner:
-                        #print(f"{winner} wins!")
-                        display_Chesswin_screen(winner)
-                        loop = False
-        else: 
+        else:
             print("invalid option please enter 1 2 3 or 4: ")
-
-'''old main function is below for chess main '''        
-'''def main(WIDTH,ROWS):
-    # Initialize the chess grid with nodes and pieces
-    grid = make_grid(ROWS, WIDTH)
-    # Track the currently highlighted piece, initially set to None
-    highlightedPiece = None
-    # Set the current move to 'W' (White) as the starting player
-    currMove = 'W'
-    lastMove = None  # Initialize lastMove as None
-
-    checkMate = isKingInCheckmate(currMove, grid)
-    # Start the game loop
-    while checkMate is not True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                print('EXIT SUCCESSFUL')
-                pygame.quit()
-                sys.exit()
-
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                clickedNode = getNode(ROWS, WIDTH)
-                ClickedPositionColumn, ClickedPositionRow = clickedNode
-                # Check if a valid move is made (blue colored cell)
-                if grid[ClickedPositionColumn][ClickedPositionRow].colour == BLUE:
-                    if highlightedPiece:
-                        pieceColumn, pieceRow = highlightedPiece
-                    if currMove == grid[pieceColumn][pieceRow].piece.team:
-                        # Try to execute the move
-                        moveSuccessful = move(grid, highlightedPiece, clickedNode, lastMove)
-                        if moveSuccessful:
-                            # Move was successful, update lastMove, switch turns, etc.
-                            # Reset colors of the previous move
-                            resetColours(grid, highlightedPiece,lastMove)
-                            # Update lastMove object with new move details
-                            movedPiece = grid[ClickedPositionColumn][ClickedPositionRow].piece
-                            lastMove = LastMove(movedPiece, highlightedPiece, clickedNode)
-                            highlightedPiece = None  # Reset the highlighted piece so no cell is marked as selected
-                            # Add additional details if necessary, possibly move type?
-                            # After a move is made, check if the king is in check
-                            if isKingInCheck(opposite(currMove), grid):
-                                print("Check!")  # Notify the player
-                                # Determine if the opponent can move out of check
-                                if not canMoveOutOfCheck(opposite(currMove), grid):
-                                    if isKingInCheckmate(opposite(currMove), grid):
-                                        print("Checkmate!")
-                                        exit()
-                                    else:
-                                        print("Stalemate!")
-                                # Switch turns
-                            currMove = opposite(currMove)
-                        else:
-                            # Move was not successful (would put/leave king in check), handle accordingly
-                            print("Illegal move: would put/leave king in check.")
-                            # Do not switch turns, allow the player to make another move
-                elif highlightedPiece == clickedNode:
-                        pass
-                else:
-                    if grid[ClickedPositionColumn][ClickedPositionRow].piece:
-                        if currMove == grid[ClickedPositionColumn][ClickedPositionRow].piece.team:
-                            highlightedPiece = highlight(clickedNode, grid, highlightedPiece, lastMove)
-
-            update_display(WIN,grid,ROWS,WIDTH)
-'''
-main(WIDTH, ROWS)
+main()
