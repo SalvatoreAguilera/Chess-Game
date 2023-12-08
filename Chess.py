@@ -1037,6 +1037,7 @@ def make_testcheckersgrid(rows, width):
             if i == 7 and j == 3:
                 node.piece = checkersPiece('R')
                 node.piece.type = 'KING'
+                node.piece.image = REDKING
 
             grid[i].append(node)
 
