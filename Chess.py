@@ -1488,7 +1488,7 @@ def main():
     print("Option3: Checkers Test")
     print("Option4: Chess Test")
     while True:
-        choice = input("Enter your choice 1, 2, 3, 4, or q to exit")
+        choice = input("Enter your choice 1, 2, 3, 4, or q to exit: ")
 
         if choice == '1':
             checkersGame()
