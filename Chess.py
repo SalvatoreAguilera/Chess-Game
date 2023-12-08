@@ -1,7 +1,6 @@
 #Class Project pygame chess
-#members: Jonathan Morley, , ,
-#Version 1.3 "broken en passant and pawn promotion"
-#11/27/23 not done at 2:17 A.M.
+#members: Jonathan Morley, Irene Chavez, Sebastian Monungolh, Salvatore Gutierrez
+#12/8/2023
 #
 
 import pygame
@@ -94,7 +93,7 @@ class LastMove:
         self.end_pos = end_pos     # The ending position of the move (tuple: (col, row))
         self.move_type = move_type # Type of move (e.g., "en_passant", "castle", "two_step_pawn", etc.)
 
-def make_grid(rows, width):
+def makeGrid(rows, width):
     #initialize grid array
     grid = []
     #The double slash // in Python is used for floor division.
@@ -151,14 +150,14 @@ def make_grid(rows, width):
             grid[i].append(node)
     return grid
 
-def draw_grid(win, rows, width):
+def drawGrid(win, rows, width):
     gap = width // ROWS
     for i in range(rows):
         pygame.draw.line(win, BLACK, (0, i * gap), (width, i * gap))
         for j in range(rows):
             pygame.draw.line(win, BLACK, (j * gap, 0), (j * gap, width))
 
-def draw_pause(window):
+def drawPause(window):
     # Create a surface to cover the screen
     overlay = pygame.Surface(window.get_size(), pygame.SRCALPHA)
     overlay.fill((0, 0, 0, 128))
@@ -189,11 +188,11 @@ def draw_pause(window):
     # Return the rectangles
     return [quit_button, restart_button, menu_button]
 
-def update_display(win, grid, rows, width):
+def updateDisplay(win, grid, rows, width):
     for row in grid:
         for spot in row:
             spot.draw(win)
-    draw_grid(win, rows, width)
+    drawGrid(win, rows, width)
     pygame.display.update()
 
 def pawnMoves(col, row, grid, lastMove):
@@ -317,7 +316,7 @@ def isSquareUnderAttack(pos, grid, currMove):
                     return True
     return False
 
-def print_grid_positions(grid):
+def printGridPositions(grid):
     for row in grid:
         for node in row:
             if node.piece:
@@ -664,7 +663,7 @@ def promotePawn(grid, pawnPos, team):
     if new_piece:
         grid[pawnPos[0]][pawnPos[1]].piece = new_piece
         print(f"Promotion: {new_piece.type} created for team {new_piece.team}")
-        update_display(WIN, grid, ROWS, WIDTH)
+        updateDisplay(WIN, grid, ROWS, WIDTH)
     else:
         print("Error: promotion not created")
 
@@ -1091,7 +1090,7 @@ def chessGame():
     WIN = pygame.display.set_mode((window_size, window_size))
     pause = False
     loop = True
-    grid = make_grid(ROWS,WIDTH)
+    grid = makeGrid(ROWS,WIDTH)
     currMove = 'W'
     lastMove = None
 
@@ -1099,7 +1098,7 @@ def chessGame():
     def restartChessGame():
         nonlocal loop, grid, currMove, lastMove, highlightedPiece
         loop = True
-        grid = make_grid(ROWS, WIDTH)
+        grid = makeGrid(ROWS, WIDTH)
         currMove = 'W'
         lastMove = None
         highlightedPiece = None
@@ -1122,7 +1121,7 @@ def chessGame():
                 if event.key == pygame.K_ESCAPE:
                     pause = not pause
                 if pause:
-                    pause_buttons = draw_pause(WIN)  # Update pause_buttons here
+                    pause_buttons = drawPause(WIN)  # Update pause_buttons here
 
             #pause menu buttons, 1 to quit program, 2 to restart game, 3 to return to text menu
             if pause and event.type == pygame.MOUSEBUTTONDOWN:
@@ -1163,7 +1162,7 @@ def chessGame():
                                     if not canMoveOutOfCheck(opposite(currMove), grid):
                                         if isKingInCheckmate(opposite(currMove), grid):
                                             print("Checkmate!")
-                                            update_display(WIN,grid,ROWS,WIDTH)
+                                            updateDisplay(WIN,grid,ROWS,WIDTH)
                                             winner = opposite(currMove)
                                             displayChessWinScreen(winner)
                                         else:
@@ -1183,14 +1182,14 @@ def chessGame():
 
         if pause:
             current_screen = pygame.display.get_surface()
-            draw_pause(current_screen)
+            drawPause(current_screen)
             pygame.display.flip()  # Update the display
         else:
             # Clear the screen
             WIN.fill((0, 0, 0))  # Black background
             # Draw the grid labels
             drawGridLabels(WIN, board_top_left_x, board_top_left_y, cell_size)
-            update_display(WIN,grid,ROWS,WIDTH)
+            updateDisplay(WIN,grid,ROWS,WIDTH)
             #pygame.display.flip()
             winner = chessCheckWin(grid)
             if winner:
@@ -1244,7 +1243,7 @@ def checkersGame():
                 if event.key == pygame.K_ESCAPE:
                     pause = not pause
                 if pause:
-                    pause_buttons = draw_pause(WIN)
+                    pause_buttons = drawPause(WIN)
 
             if pause and event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -1275,7 +1274,7 @@ def checkersGame():
                                 highlightedPiece = checkersHighlight(clickedNode, grid, highlightedPiece)
         if pause:
             current_screen = pygame.display.get_surface()
-            draw_pause(current_screen)
+            drawPause(current_screen)
             pygame.display.flip()
         else:
             # Clear the screen
@@ -1329,7 +1328,7 @@ def checkersDebug():
                 if event.key == pygame.K_ESCAPE:
                     pause = not pause
                 if pause:
-                    pause_buttons = draw_pause(WIN)
+                    pause_buttons = drawPause(WIN)
 
             if pause and event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -1360,7 +1359,7 @@ def checkersDebug():
                                 highlightedPiece = checkersHighlight(clickedNode, grid, highlightedPiece)
         if pause:
             current_screen = pygame.display.get_surface()
-            draw_pause(current_screen)
+            drawPause(current_screen)
             pygame.display.flip()
         else:
             # Clear the screen
@@ -1417,7 +1416,7 @@ def chessDebug():
                 if event.key == pygame.K_ESCAPE:
                     pause = not pause
                 if pause:
-                    pause_buttons = draw_pause(WIN)
+                    pause_buttons = drawPause(WIN)
 
             if pause and event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -1476,12 +1475,12 @@ def chessDebug():
                                 highlightedPiece = highlight(clickedNode, grid, highlightedPiece, lastMove)
             if pause:
                 current_screen = pygame.display.get_surface()
-                draw_pause(current_screen)
+                drawPause(current_screen)
                 pygame.display.flip()
             else:
                 WIN.fill((0, 0, 0))
                 drawGridLabels(WIN, board_top_left_x, board_top_left_y, cell_size)
-                update_display(WIN,grid,ROWS,WIDTH)
+                updateDisplay(WIN,grid,ROWS,WIDTH)
                 winner = chessCheckWin(grid)
                 if winner:
                     displayChessWinScreen(winner)
